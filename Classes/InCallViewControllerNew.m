@@ -18,6 +18,7 @@
 #import "InCallDialpadView.h"
 #import "RTTMessageModel.h"
 #import "BubbleTableViewCell.h"
+#import "StatusBar.h"
 
 
 #define kBottomButtonsAnimationDuration     0.3f
@@ -74,6 +75,7 @@ typedef NS_ENUM(NSInteger, CallQualityStatus) {
 @property (weak, nonatomic) IBOutlet UIButton *closeChatButton;
 @property (strong, nonatomic) NSMutableString *msgBuffer;
 @property (strong, nonatomic) NSMutableString *minimizedTextBuffer;
+@property (weak, nonatomic) IBOutlet StatusBar *statusBar;
 
 @end
 
@@ -158,7 +160,6 @@ typedef NS_ENUM(NSInteger, CallQualityStatus) {
 }
 
 - (void)keyboardWillShow:(NSNotification *)notification {
-    
     if (self.isRTTEnabled) {
         CGRect keyboardFrame =  [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
         CGFloat keyboardPos = keyboardFrame.origin.y;
@@ -187,7 +188,6 @@ typedef NS_ENUM(NSInteger, CallQualityStatus) {
 }
 
 - (void)keyboardWillBeHidden:(NSNotification *)notification {
-    
     CGRect keyboardFrame =  [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
     CGFloat keyboardPos = keyboardFrame.origin.y;
     CGFloat remote_video_delta = (self.videoView.frame.origin.y +
@@ -954,13 +954,16 @@ typedef NS_ENUM(NSInteger, CallQualityStatus) {
 
 - (void)sortChatEntriesArray {
     
-    NSSortDescriptor *descriptor = [[NSSortDescriptor alloc] initWithKey:@"modifiedTimeInterval" ascending:YES];
-    NSArray *descriptors = [NSArray arrayWithObject:descriptor];
-    NSMutableArray *reverseOrder = [[self.chatEntries sortedArrayUsingDescriptors:descriptors] mutableCopy];
-    [self.chatEntries removeAllObjects];
-    for (RTTMessageModel *msgModel in reverseOrder) {
-        [self.chatEntries addObject:msgModel];
+    if (self.chatEntries.count > 0) {
+        NSSortDescriptor *descriptor = [[NSSortDescriptor alloc] initWithKey:@"modifiedTimeInterval" ascending:YES];
+        NSArray *descriptors = [NSArray arrayWithObject:descriptor];
+        [self.chatEntries sortUsingDescriptors:descriptors];
     }
+    //    NSMutableArray *reverseOrder = [[self.chatEntries sortedArrayUsingDescriptors:descriptors] mutableCopy];
+    //    [self.chatEntries removeAllObjects];
+    //    for (RTTMessageModel *msgModel in reverseOrder) {
+    //        [self.chatEntries addObject:msgModel];
+    //    }
 }
 
 - (void)showLatestMessage {

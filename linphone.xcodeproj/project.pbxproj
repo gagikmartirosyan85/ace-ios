@@ -471,6 +471,8 @@
 		73FC502F1BA8C4D900A02E21 /* wizard_vtcsecure_existing.rc in Resources */ = {isa = PBXBuildFile; fileRef = 73FC502E1BA8C4D900A02E21 /* wizard_vtcsecure_existing.rc */; };
 		A43BA92C1C3198B3000A3CE1 /* chat_off_default_landscape.png in Resources */ = {isa = PBXBuildFile; fileRef = A43BA92B1C3198B3000A3CE1 /* chat_off_default_landscape.png */; };
 		A459864B1C31BCDA00564285 /* chat_off_default_landscape.png in Resources */ = {isa = PBXBuildFile; fileRef = A459864A1C31BCDA00564285 /* chat_off_default_landscape.png */; };
+		C63AF3C81C96F5C100685FAD /* StatusBar.m in Sources */ = {isa = PBXBuildFile; fileRef = C63AF3C71C96F5C100685FAD /* StatusBar.m */; };
+		C63AF3CA1C96F5CC00685FAD /* StatusBar.xib in Resources */ = {isa = PBXBuildFile; fileRef = C63AF3C91C96F5CC00685FAD /* StatusBar.xib */; };
 		C656335E1C88565E00EF8EDA /* BaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = C656335D1C88565E00EF8EDA /* BaseView.m */; };
 		C65633661C8856EA00EF8EDA /* SecondIncomingCallBarView.m in Sources */ = {isa = PBXBuildFile; fileRef = C65633651C8856EA00EF8EDA /* SecondIncomingCallBarView.m */; };
 		C65633681C8856FB00EF8EDA /* SecondIncomingCallBarView.xib in Resources */ = {isa = PBXBuildFile; fileRef = C65633671C8856FB00EF8EDA /* SecondIncomingCallBarView.xib */; };
@@ -1818,6 +1820,9 @@
 		8D1107310486CEB800E47090 /* linphone-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "linphone-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
 		A43BA92B1C3198B3000A3CE1 /* chat_off_default_landscape.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = chat_off_default_landscape.png; path = Resources/chat_off_default_landscape.png; sourceTree = "<group>"; };
 		A459864A1C31BCDA00564285 /* chat_off_default_landscape.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = chat_off_default_landscape.png; path = Resources/chat_off_default_landscape.png; sourceTree = "<group>"; };
+		C63AF3C61C96F5C100685FAD /* StatusBar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StatusBar.h; sourceTree = "<group>"; };
+		C63AF3C71C96F5C100685FAD /* StatusBar.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StatusBar.m; sourceTree = "<group>"; };
+		C63AF3C91C96F5CC00685FAD /* StatusBar.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = StatusBar.xib; sourceTree = "<group>"; };
 		C63B18251C89B51600969395 /* InCallViewConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = InCallViewConstants.h; sourceTree = "<group>"; };
 		C656335C1C88565E00EF8EDA /* BaseView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BaseView.h; sourceTree = "<group>"; };
 		C656335D1C88565E00EF8EDA /* BaseView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BaseView.m; sourceTree = "<group>"; };
@@ -3412,11 +3417,22 @@
 			name = Views;
 			sourceTree = "<group>";
 		};
+		C63AF3C51C96F5A200685FAD /* Status Bar */ = {
+			isa = PBXGroup;
+			children = (
+				C63AF3C61C96F5C100685FAD /* StatusBar.h */,
+				C63AF3C71C96F5C100685FAD /* StatusBar.m */,
+				C63AF3C91C96F5CC00685FAD /* StatusBar.xib */,
+			);
+			name = "Status Bar";
+			sourceTree = "<group>";
+		};
 		C63B18241C89B4E100969395 /* In Call View Controller */ = {
 			isa = PBXGroup;
 			children = (
-				C6B2F8B81C9008D3006A2B0C /* In Call Dialpad View */,
+				C63AF3C51C96F5A200685FAD /* Status Bar */,
 				C63B18251C89B51600969395 /* InCallViewConstants.h */,
+				C6B2F8B81C9008D3006A2B0C /* In Call Dialpad View */,
 				C6BC55451C897089006B24DE /* Call Bar View */,
 				C6F3E7D11C888530002C06E1 /* In Call On Hold View */,
 				C65633631C88566F00EF8EDA /* Second Incoming Call Bar View */,
@@ -4812,7 +4828,7 @@
 				LastUpgradeCheck = 0700;
 				TargetAttributes = {
 					1D6058900D05DD3D006BFB54 = {
-						DevelopmentTeam = N35DF75MHS;
+						DevelopmentTeam = SJGPQWR594;
 						SystemCapabilities = {
 							com.apple.InAppPurchase = {
 								enabled = 0;
@@ -5451,6 +5467,7 @@
 				D3A74F3615C69392001500B9 /* settings_selected_landscape~ipad.png in Resources */,
 				D3A74F3815C69392001500B9 /* settings_selected~ipad.png in Resources */,
 				D3A74F3A15C69392001500B9 /* speaker_off_default~ipad.png in Resources */,
+				C63AF3CA1C96F5CC00685FAD /* StatusBar.xib in Resources */,
 				50B0082C1BA09C79002C5723 /* speaker_on_over_landscape~ipad.png in Resources */,
 				D3A74F4615C69392001500B9 /* statebar_background_landscape~ipad.png in Resources */,
 				F0642EF119DAC891009DB336 /* MainStoryboard.storyboard in Resources */,
@@ -5753,6 +5770,7 @@
 				D3807FBF15C28940005BE9BC /* DCRoundSwitch.m in Sources */,
 				D3807FC115C28940005BE9BC /* DCRoundSwitchKnobLayer.m in Sources */,
 				D3807FC315C28940005BE9BC /* DCRoundSwitchOutlineLayer.m in Sources */,
+				C63AF3C81C96F5C100685FAD /* StatusBar.m in Sources */,
 				D3807FC515C28940005BE9BC /* DCRoundSwitchToggleLayer.m in Sources */,
 				50263EFA1B977D4700B20603 /* LinphoneLocationManager.m in Sources */,
 				F4CE03021BCF9B9B00157254 /* ExtenableTextField.m in Sources */,
