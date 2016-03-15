@@ -1,17 +1,19 @@
 //
-//  StatusBar.h
+//  CallInfoView.h
 //  linphone
 //
-//  Created by Misha Torosyan on 3/14/16.
+//  Created by Misha Torosyan on 3/15/16.
 //
 //
 
 #import "BaseView.h"
 #import "InCallViewConstants.h"
 
-@interface StatusBar : BaseView
+@class UICallCellDataNew;
 
-@property (nonatomic, copy) ButtonActionHandler statusBarActionHandler;
+@interface CallInfoView : BaseView
+
+@property (nonatomic, strong) UICallCellDataNew *data;
 
 @property (nonatomic, assign) ViewState viewState;
 
@@ -30,5 +32,11 @@
  *  @param completion Completion block
  */
 - (void)hideWithAnimation:(BOOL)animation completion:(void(^)())completion;
+
+
+/**
+ *  @brief Stops updating call info
+ */
+- (void)stopDataUpdating;
 
 @end

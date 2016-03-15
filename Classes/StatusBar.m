@@ -10,6 +10,7 @@
 #import "LinphoneManager.h"
 #import "DTActionSheet.h"
 #import "PhoneMainView.h"
+#import "InCallViewConstants.h"
 
 #define kAnimationDuration 0.5f
 
@@ -351,6 +352,13 @@
                 }
             }
         }
+    }
+}
+
+- (IBAction)statusBarAction:(UIButton *)sender {
+    
+    if (self.statusBarActionHandler) {
+        self.statusBarActionHandler(sender);
     }
 }
 

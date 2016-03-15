@@ -72,6 +72,12 @@
                                 <action selector="callSecurityButtonAction:" destination="-1" eventType="touchUpInside" id="Nbq-1c-FKz"/>
                             </connections>
                         </button>
+                        <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Utq-ZL-yWy">
+                            <rect key="frame" x="0.0" y="0.0" width="375" height="23"/>
+                            <connections>
+                                <action selector="statusBarAction:" destination="-1" eventType="touchUpInside" id="me1-2b-Qrd"/>
+                            </connections>
+                        </button>
                     </subviews>
                     <color key="backgroundColor" red="0.1843137255" green="0.1960784314" blue="0.1960784314" alpha="1" colorSpace="calibratedRGB"/>
                     <constraints>
@@ -81,16 +87,20 @@
                         <constraint firstItem="bbG-Xq-Sp3" firstAttribute="leading" secondItem="HnU-UV-P3n" secondAttribute="trailing" constant="5" id="Dzp-Ah-L8c"/>
                         <constraint firstItem="xRF-98-NpH" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="6" id="GMS-SK-YF8"/>
                         <constraint firstItem="KC1-66-d5I" firstAttribute="leading" secondItem="xRF-98-NpH" secondAttribute="trailing" constant="6" id="MJ9-KV-ZWG"/>
+                        <constraint firstAttribute="bottom" secondItem="Utq-ZL-yWy" secondAttribute="bottom" id="NOt-xX-kxJ"/>
                         <constraint firstItem="HnU-UV-P3n" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="3" id="PX2-ep-iGK"/>
                         <constraint firstItem="bbG-Xq-Sp3" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="3" id="RvS-4W-zOf"/>
                         <constraint firstItem="KC1-66-d5I" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="ULe-Fi-hZT"/>
                         <constraint firstAttribute="bottom" secondItem="xRF-98-NpH" secondAttribute="bottom" constant="6" id="WOg-4e-Rsw"/>
+                        <constraint firstItem="Utq-ZL-yWy" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="XWG-xK-oxX"/>
                         <constraint firstItem="HnU-UV-P3n" firstAttribute="leading" secondItem="KC1-66-d5I" secondAttribute="trailing" constant="62" id="btV-MR-tw8"/>
                         <constraint firstItem="gT4-wK-yLm" firstAttribute="centerX" secondItem="bbG-Xq-Sp3" secondAttribute="centerX" id="dMs-dP-J1G"/>
                         <constraint firstAttribute="bottom" secondItem="HnU-UV-P3n" secondAttribute="bottom" constant="3" id="fQP-qR-1Uz"/>
                         <constraint firstAttribute="trailing" secondItem="bbG-Xq-Sp3" secondAttribute="trailing" constant="10" id="ibc-nm-V90"/>
                         <constraint firstItem="xRF-98-NpH" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="6" id="kl2-1C-VWw"/>
                         <constraint firstAttribute="bottom" secondItem="bbG-Xq-Sp3" secondAttribute="bottom" constant="3" id="mdS-gT-Tp1"/>
+                        <constraint firstItem="Utq-ZL-yWy" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="pAs-zM-ZK7"/>
+                        <constraint firstAttribute="trailing" secondItem="Utq-ZL-yWy" secondAttribute="trailing" id="yjH-U4-7A4"/>
                     </constraints>
                 </view>
             </subviews>
