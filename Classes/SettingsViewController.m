@@ -494,10 +494,8 @@ static UICompositeViewDescription *compositeDescription = nil;
         [[NSUserDefaults standardUserDefaults] setBool:enableRtt forKey:@"enable_rtt"];
         [[LinphoneManager instance] lpConfigSetBool:enableRtt forKey:@"rtt"];
         
-    } else if ([@"enable_video_preference" compare:notif.object] == NSOrderedSame) {
-		removeFromHiddenKeys = [[notif.userInfo objectForKey:@"enable_video_preference"] boolValue];
-		[keys addObject:@"video_menu"];
-	} else if ([@"random_port_preference" compare:notif.object] == NSOrderedSame) {
+    }
+    else if ([@"random_port_preference" compare:notif.object] == NSOrderedSame) {
 		removeFromHiddenKeys = ![[notif.userInfo objectForKey:@"random_port_preference"] boolValue];
 		[keys addObject:@"port_preference"];
 	} else if ([@"backgroundmode_preference" compare:notif.object] == NSOrderedSame) {
@@ -569,12 +567,19 @@ static UICompositeViewDescription *compositeDescription = nil;
         [defaults setObject:rtcpFeedbackMode forKey:@"rtcp_feedback_pref"];
         [defaults synchronize];
     }
+    else if([@"use_ipv6" compare:notif.object] == NSOrderedSame){
+        BOOL use_ipv6 = [[notif.userInfo objectForKey:@"use_ipv6"] boolValue];
+        linphone_core_enable_ipv6([LinphoneManager getLc], use_ipv6);
+        [[LinphoneManager instance] lpConfigSetBool:use_ipv6 forKey:@"use_ipv6"];
+        [[NSUserDefaults standardUserDefaults] setBool:use_ipv6 forKey:@"use_ipv6"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
     
     else if ([@"mute_microphone_preference" compare:notif.object] == NSOrderedSame) {
         BOOL isMuted = [[notif.userInfo objectForKey:@"mute_microphone_preference"] boolValue];
         linphone_core_mute_mic([LinphoneManager getLc], isMuted);
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults setBool:isMuted forKey:@"isCallAudioMuted"];
+        [defaults setBool:isMuted forKey:@"mute_microphone_preference"];
         [defaults synchronize];
 
     }
@@ -586,9 +591,9 @@ static UICompositeViewDescription *compositeDescription = nil;
 
     }
     else if ([@"mute_speaker_preference" compare:notif.object] == NSOrderedSame) {
-        BOOL isSpeakerEnabled = ([[notif.userInfo objectForKey:@"mute_speaker_preference"] boolValue]) ? NO : YES;
+        BOOL isSpeakerMuted = [[notif.userInfo objectForKey:@"mute_speaker_preference"] boolValue];
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults setBool:isSpeakerEnabled forKey:@"isSpeakerEnabled"];
+        [defaults setBool:isSpeakerMuted forKey:@"mute_speaker_preference"];
         [defaults synchronize];
     }
     else if([@"mwi_uri_preference" compare:notif.object] == NSOrderedSame){
@@ -752,24 +757,82 @@ static UICompositeViewDescription *compositeDescription = nil;
             [defaults synchronize];
         }
     }
+    else if([@"signaling_preference" compare:notif.object] == NSOrderedSame) {
+        if (![[[NSUserDefaults standardUserDefaults] objectForKey:@"QoS"] boolValue]) {
+            [self refreshTable];
+        } else {
+            int signalValue = [[notif.userInfo objectForKey:@"signaling_preference"] intValue];
+            linphone_core_set_sip_dscp([LinphoneManager getLc], signalValue);
+            NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+            [defaults setInteger:signalValue forKey:@"signaling_preference"];
+            [defaults synchronize];
+        }
+    }
+    else if([@"audio_preference" compare:notif.object] == NSOrderedSame) {
+        if (![[[NSUserDefaults standardUserDefaults] objectForKey:@"QoS"] boolValue]) {
+            [self refreshTable];
+        } else {
+            int audioValue = [[notif.userInfo objectForKey:@"audio_preference"] intValue];
+            linphone_core_set_audio_dscp([LinphoneManager getLc], audioValue);
+            NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+            [defaults setInteger:audioValue forKey:@"audio_preference"];
+            [defaults synchronize];
+            if (![[[NSUserDefaults standardUserDefaults] objectForKey:@"QoS"] boolValue]) {
+                [settingsStore setBool:1 forKey:@"echo_cancel_preference"];
+                [self refreshTable];
+            }
+        }
+    }
+    else if([@"video_preference" compare:notif.object] == NSOrderedSame) {
+        if (![[[NSUserDefaults standardUserDefaults] objectForKey:@"QoS"] boolValue]) {
+            [self refreshTable];
+        } else {
+            int videoValue = [[notif.userInfo objectForKey:@"video_preference"] intValue];
+            linphone_core_set_video_dscp([LinphoneManager getLc], videoValue);
+            NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+            [defaults setInteger:videoValue forKey:@"video_preference"];
+            [defaults synchronize];
+            if (![[[NSUserDefaults standardUserDefaults] objectForKey:@"QoS"] boolValue]) {
+                [settingsStore setBool:1 forKey:@"echo_cancel_preference"];
+                [self refreshTable];
+            }
+        }
+    }
     else if([@"echo_cancel_preference" compare:notif.object] == NSOrderedSame){
         BOOL isEchoCancelEnabled = ([[notif.userInfo objectForKey:@"echo_cancel_preference"] boolValue]) ? YES : NO;
         linphone_core_enable_echo_cancellation([LinphoneManager getLc], isEchoCancelEnabled);
     } else if([@"QoS" compare:notif.object] == NSOrderedSame) {
         BOOL enabled = ([[notif.userInfo objectForKey:@"QoS"] boolValue]) ? YES : NO;
         if (enabled) {
-            linphone_core_set_sip_dscp([LinphoneManager getLc], 28);
-            linphone_core_set_audio_dscp([LinphoneManager getLc], 38);
-            linphone_core_set_video_dscp([LinphoneManager getLc], 38);
+            int signalValue = 24;
+            int audioValue = 46;
+            int videoValue = 46;
+            if ([[NSUserDefaults standardUserDefaults] objectForKey:@"signaling_preference"] ||
+                [[NSUserDefaults standardUserDefaults] objectForKey:@"audio_preference"] ||
+                [[NSUserDefaults standardUserDefaults] objectForKey:@"video_preference"]) {
+                signalValue = [[[NSUserDefaults standardUserDefaults] objectForKey:@"signaling_preference"] intValue];
+                audioValue = [[[NSUserDefaults standardUserDefaults] objectForKey:@"audio_preference"] intValue];
+                videoValue = [[[NSUserDefaults standardUserDefaults] objectForKey:@"video_preference"] intValue];
+            }
+            linphone_core_set_sip_dscp([LinphoneManager getLc], signalValue);
+            linphone_core_set_audio_dscp([LinphoneManager getLc], audioValue);
+            linphone_core_set_video_dscp([LinphoneManager getLc], videoValue);
+            [settingsStore setInteger:signalValue forKey:@"signaling_preference"];
+            [settingsStore setInteger:audioValue forKey:@"audio_preference"];
+            [settingsStore setInteger:videoValue forKey:@"video_preference"];
         } else {
             // Default values
             linphone_core_set_sip_dscp([LinphoneManager getLc], 0);
             linphone_core_set_audio_dscp([LinphoneManager getLc], 0);
             linphone_core_set_video_dscp([LinphoneManager getLc], 0);
+            [settingsStore setObject:@"0" forKey:@"signaling_preference"];
+            [settingsStore setObject:@"0" forKey:@"audio_preference"];
+            [settingsStore setObject:@"0" forKey:@"video_preference"];
         }
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
         [defaults setBool:enabled forKey:@"QoS"];
         [defaults synchronize];
+        [self refreshTable];
     }
 
 	for (NSString *key in keys) {
@@ -780,6 +843,12 @@ static UICompositeViewDescription *compositeDescription = nil;
 	}
 
 	[settingsController setHiddenKeys:hiddenKeys animated:TRUE];
+}
+
+- (void)refreshTable {
+    [settingsStore transformLinphoneCoreToKeys];
+    settingsController.hiddenKeys = [self findHiddenKeys];
+    [settingsController.tableView reloadData];
 }
 
 - (void) changeColor: (NSString*) pref
@@ -947,10 +1016,6 @@ static BOOL isAdvancedSettings = FALSE;
 
 	[hiddenKeys addObject:@"enable_first_login_view_preference"];
 
-	if (!linphone_core_video_supported([LinphoneManager getLc])) {
-		[hiddenKeys addObject:@"enable_video_preference"];
-	}
-
 	if (!linphone_core_video_enabled([LinphoneManager getLc])) {
 		[hiddenKeys addObject:@"video_menu"];
 	}
@@ -1002,7 +1067,6 @@ static BOOL isAdvancedSettings = FALSE;
 		[hiddenKeys addObject:@"repeat_call_notification_preference"];
 	}
     if(!isAdvancedSettings){
-        [hiddenKeys addObject:@"enable_video_preference"];
         [hiddenKeys addObject:@"avpf_preference"];
         [hiddenKeys addObject:@"outbound_proxy_preference"];
         [hiddenKeys addObject:@"password_preference"];
@@ -1061,15 +1125,18 @@ static BOOL isAdvancedSettings = FALSE;
 			[self goToWizard];
 			return;
 		}
-		UIAlertView *alert = [[UIAlertView alloc]
-				initWithTitle:NSLocalizedString(@"Warning", nil)
-					  message:
-						  NSLocalizedString(
-							  @"Launching the Wizard will delete any existing proxy config.\nAre you sure to want it?",
-							  nil)
-					 delegate:self
-			cancelButtonTitle:NSLocalizedString(@"Cancel", nil)
-			otherButtonTitles:NSLocalizedString(@"Launch Wizard", nil), nil];
+		DTAlertView *alert = [[DTAlertView alloc]
+                    initWithTitle:NSLocalizedString(@"Warning", nil)
+					  message:NSLocalizedString(@"Launching the Wizard will delete any existing proxy config.\nAre you sure to want to logout?",nil)];
+        [alert addCancelButtonWithTitle:NSLocalizedString(@"Cancel", nil) block:nil];
+        [alert addButtonWithTitle:NSLocalizedString(@"Launch Wizard", nil)
+                            block:^{
+                                linphone_core_clear_proxy_config(lc);
+                                linphone_core_clear_all_auth_info(lc);
+                                [self goToWizard];
+                            }];
+        [alert setDelegate:self];
+        
 		[alert show];
 	} else if ([key isEqual:@"clear_proxy_button"]) {
 		if (linphone_core_get_default_proxy_config(lc) == NULL) {
@@ -1083,6 +1150,8 @@ static BOOL isAdvancedSettings = FALSE;
 		[alert addCancelButtonWithTitle:NSLocalizedString(@"Cancel", nil) block:nil];
 		[alert addButtonWithTitle:NSLocalizedString(@"Yes", nil)
 							block:^{
+                              NSString *appDomain = [[NSBundle mainBundle] bundleIdentifier];
+                              [[NSUserDefaults standardUserDefaults] removePersistentDomainForName:appDomain];
 							  linphone_core_clear_proxy_config(lc);
 							  linphone_core_clear_all_auth_info(lc);
 							  [settingsStore transformLinphoneCoreToKeys];
@@ -1168,11 +1237,19 @@ static BOOL isAdvancedSettings = FALSE;
     }
 }
 
+-(void) resetMediaSettings{
+    if([LinphoneManager getLc]){
+        //Default to no media encryption
+        linphone_core_set_media_encryption([LinphoneManager getLc], LinphoneMediaEncryptionNone);
+    }
+}
+
 - (void)factoryReset {
     [self resetTheme];
     [self clearUserDefaults];
     [self deleteStorageFiles];
     [self clearCacheData];
+    [self resetMediaSettings];
     [self goToWizard];
 }
 
@@ -1228,8 +1305,9 @@ static BOOL isAdvancedSettings = FALSE;
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
 	if (buttonIndex != 1)
 		return; /* cancel */
-	else
-		[self goToWizard];
+    else {
+        [self goToWizard];
+    }
 }
 
 #pragma mark - Mail composer for sending logs

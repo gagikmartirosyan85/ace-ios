@@ -30,6 +30,7 @@
 
 
 #define DATEPICKER_HEIGHT 230
+#define DEFAULT_ERROR_DATA_MESSAGE @"Improper registration data."
 
 typedef enum _ViewElement {
 	ViewElement_Username = 100,
@@ -142,14 +143,14 @@ static UICompositeViewDescription *compositeDescription = nil;
 }
 
 - (void)loadProviderDomainsFromCache {
-    
     NSString *name;
-    cdnResources = [[NSMutableArray alloc] init];
-    name = [[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"provider%d", 0]];
-    
-    for (int i = 1; name; i++) {
-        [cdnResources addObject:name];
-        name = [[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"provider%d", i]];
+    if(!cdnResources){
+        cdnResources = [[NSMutableArray alloc] init];
+        name = [[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"provider%d", 0]];
+        for (int i = 1; name; i++) {
+            [cdnResources addObject:name];
+            name = [[NSUserDefaults standardUserDefaults] objectForKey:[NSString stringWithFormat:@"provider%d", i]];
+        }
     }
     [self setupProviderPickerView];
 }
@@ -248,12 +249,10 @@ static UICompositeViewDescription *compositeDescription = nil;
 }
 
 - (void)initLoginSettingsFields {
-    self.textFieldDomain.text = [DefaultSettingsManager sharedInstance].sipRegisterDomain;
-    //self.transportTextField.text = [[DefaultSettingsManager sharedInstance].sipRegisterTransport uppercaseString];
-    self.transportTextField.text = [[DefaultSettingsManager sharedInstance].sipRegisterTransport uppercaseString];
+    self.textFieldDomain.text = [[DefaultSettingsManager sharedInstance].sipRegisterDomain stringByReplacingOccurrencesOfString:@"\"" withString:@""];
+    self.transportTextField.text = [[[DefaultSettingsManager sharedInstance].sipRegisterTransport uppercaseString] stringByReplacingOccurrencesOfString:@"\"" withString:@""];
     self.textFieldPort.text = [NSString stringWithFormat:@"%d", [DefaultSettingsManager sharedInstance].sipRegisterPort];
-    self.textFieldUserId.text = [DefaultSettingsManager sharedInstance].sipAuthUsername;
-    [self apiSignIn];
+    self.textFieldUserId.text = [[DefaultSettingsManager sharedInstance].sipAuthUsername stringByReplacingOccurrencesOfString:@"\"" withString:@""];
 }
 
 
@@ -521,8 +520,21 @@ static UICompositeViewDescription *compositeDescription = nil;
             }
         }
         // when the domain is specified (for external login), take it as the server address
-        linphone_proxy_config_set_server_addr(proxyCfg, [server_address UTF8String]);
-        linphone_address_set_domain(linphoneAddress, [domain UTF8String]);
+        int result = linphone_proxy_config_set_server_addr(proxyCfg, [server_address UTF8String]);
+        
+        if (result) {
+            [self showDefaultRegistrationFailedMessage];
+            [waitView setHidden:true];
+            return NO;
+        }
+
+        result = linphone_address_set_domain(linphoneAddress, [domain UTF8String]);
+        
+        if (result) {
+            [self showDefaultRegistrationFailedMessage];
+            [waitView setHidden:true];
+            return NO;
+        }
     }
     
     char* extractedAddres = linphone_address_as_string_uri_only(linphoneAddress);
@@ -543,8 +555,14 @@ static UICompositeViewDescription *compositeDescription = nil;
     
     char *c_parsedAddress = linphone_address_as_string_uri_only(parsedAddress);
     
-    linphone_proxy_config_set_identity(proxyCfg, c_parsedAddress);
+    int result = linphone_proxy_config_set_identity(proxyCfg, c_parsedAddress);
     
+    if (result) {
+        [self showDefaultRegistrationFailedMessage];
+        [waitView setHidden:true];
+        return NO;
+    }
+
     linphone_address_destroy(parsedAddress);
     ms_free(c_parsedAddress);
     
@@ -603,10 +621,10 @@ static UICompositeViewDescription *compositeDescription = nil;
     NSString *first = [[NSUserDefaults standardUserDefaults] objectForKey:@"ACE_FIRST_OPEN"];
     
     if(![[[[NSUserDefaults standardUserDefaults] dictionaryRepresentation] allKeys] containsObject:@"video_preferred_size_preference"]){
-        [[NSUserDefaults standardUserDefaults] setObject:@"vga" forKey:@"video_preferred_size_preference"];
+        [[NSUserDefaults standardUserDefaults] setObject:@"cif" forKey:@"video_preferred_size_preference"];
 
         MSVideoSize vsize;
-        MS_VIDEO_SIZE_ASSIGN(vsize, VGA);
+        MS_VIDEO_SIZE_ASSIGN(vsize, CIF);
         linphone_core_set_preferred_video_size([LinphoneManager getLc], vsize);
         linphone_core_set_download_bandwidth([LinphoneManager getLc], 1500);
         linphone_core_set_upload_bandwidth([LinphoneManager getLc], 1500);
@@ -743,24 +761,38 @@ static UICompositeViewDescription *compositeDescription = nil;
     
     return image;
 }
-
+const NSString *LOGIN_INDEX_KEY = @"login_index";
 - (void)setupProviderPickerView {
-    
-    providerPickerView = [[UICustomPicker alloc] initWithFrame:CGRectMake(0, providerButtonLeftImageView.frame.origin.y + DATEPICKER_HEIGHT / 2, self.view.frame.size.width, DATEPICKER_HEIGHT) SourceList:cdnResources];
-    [providerPickerView setAlpha:1.0f];
-    providerPickerView.delegate = self;
-    
+    if(!providerPickerView){
+        providerPickerView = [[UICustomPicker alloc] initWithFrame:CGRectMake(0, providerButtonLeftImageView.frame.origin.y + DATEPICKER_HEIGHT / 2, self.view.frame.size.width, DATEPICKER_HEIGHT) SourceList:[[NSArray alloc] init]];
+        [providerPickerView setAlpha:1.0f];
+        providerPickerView.delegate = self;
+    }
+    NSInteger cachedSelection = [[NSUserDefaults standardUserDefaults] integerForKey:(NSString*)LOGIN_INDEX_KEY];
     if(cdnResources.count > 0) {
-        [providerPickerView setSelectedRow:0];
-        [self.selectProviderButton setTitle:[cdnResources objectAtIndex:0] forState:UIControlStateNormal];
-        [self.selectProviderButton layoutSubviews];
-        NSString *domain;
-        if([[[[NSUserDefaults standardUserDefaults] dictionaryRepresentation] allKeys] containsObject:[NSString stringWithFormat:@"provider%d_domain", 0]]){
-            domain = [[NSUserDefaults standardUserDefaults] stringForKey:[NSString stringWithFormat:@"provider%d_domain", 0]];
-        }
+        if(cachedSelection >= cdnResources.count) { cachedSelection = 0; }
         
-        if(domain == nil) {
-            domain = @"";
+        [providerPickerView setDataSource:cdnResources];
+        NSString *domain;
+        if([[[[NSUserDefaults standardUserDefaults] dictionaryRepresentation] allKeys] containsObject:[NSString stringWithFormat:@"provider%ld_domain", (long)cachedSelection]]){
+                domain = [[NSUserDefaults standardUserDefaults] stringForKey:[NSString stringWithFormat:@"provider%ld_domain", (long)cachedSelection]];
+                 self.textFieldDomain.text = (domain != nil)?domain:@"";
+                [self.selectProviderButton setTitle:[cdnResources objectAtIndex:cachedSelection] forState:UIControlStateNormal];
+            
+            UIImage *image = [self fetchProviderImageWithDomain:[cdnResources objectAtIndex:cachedSelection]];
+            if(image){
+                [providerButtonLeftImageView removeFromSuperview];
+                providerButtonLeftImageView = [[UIImageView alloc] initWithFrame:CGRectMake(20, 9, 25, 25)];
+                [providerButtonLeftImageView setContentMode:UIViewContentModeCenter];
+                [providerButtonLeftImageView setImage:image];
+                providerButtonLeftImageView.contentMode = UIViewContentModeScaleAspectFit;
+                [self.selectProviderButton addSubview:providerButtonLeftImageView];
+                [self.selectProviderButton layoutSubviews];
+                
+            }
+            
+             [providerPickerView setSelectedRow:cachedSelection];
+             [providerPickerView layoutSubviews];
         }
     }
 }
@@ -810,7 +842,6 @@ static UICompositeViewDescription *compositeDescription = nil;
 
 	[waitView setHidden:false];
 }
-
 
 #pragma mark -
 - (void)registrationUpdate:(LinphoneRegistrationState)state message:(NSString *)message {
@@ -970,13 +1001,56 @@ static UICompositeViewDescription *compositeDescription = nil;
 
     NSString *configURL = [rueConfigFormatURL stringByReplacingOccurrencesOfString:@"%domain%" withString:self.textFieldDomain.text];
     NSMutableArray *username = [[NSMutableArray alloc] initWithObjects:self.textFieldUsername.text, nil];
-
+    if (![self checkLoginCredentials]) {
+        return;
+    }
+    if ([[LinphoneManager instance] coreIsRunning]) {
+        [[LinphoneManager instance] destroyLinphoneCore];
+        [LinphoneManager instanceRelease];
+        [LinphoneManager instanceWithUsername:self.textFieldUsername.text andDomain:self.textFieldDomain.text];
+        [[LinphoneManager instance] startLinphoneCore];
+    }
     [[DefaultSettingsManager sharedInstance] setSipRegisterUserNames:username];
     [[DefaultSettingsManager sharedInstance] setSipAuthUsername:self.textFieldUserId.text];
     [[DefaultSettingsManager sharedInstance] setSipAuthPassword:self.textFieldPassword.text];
     [[DefaultSettingsManager sharedInstance] setSipRegisterDomain:self.textFieldDomain.text];
+    [[DefaultSettingsManager sharedInstance] setSipRegisterTransport:self.transportTextField.text];
     [[DefaultSettingsManager sharedInstance] setSipRegisterPort:self.textFieldPort.text.intValue];
     [[DefaultSettingsManager sharedInstance] parseDefaultConfigSettings:configURL];
+}
+
+- (BOOL)checkLoginCredentials {
+    
+    NSString *errorMessage = @"";
+    
+    if ([self.textFieldUsername.text length] == 0 ) {
+        errorMessage = @"The username can't be empty";
+    }
+    
+    if ([self.textFieldPassword.text length] == 0 && [errorMessage isEqualToString:@""]) {
+        errorMessage = @"The password field can't be empty";
+    }
+    
+    if ([self.textFieldDomain.text length] == 0 && [errorMessage isEqualToString:@""]) {
+        errorMessage = @"The domain field can't be empty";
+    }
+    
+    if ([self.textFieldPort.text length] == 0 && [errorMessage isEqualToString:@""]) {
+        errorMessage = @"The Port field can't be empty";
+    }
+
+    if (![errorMessage isEqualToString:@""]) {
+        UIAlertView *errorView =
+        [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Check error", nil)
+                                   message:errorMessage
+                                  delegate:nil
+                         cancelButtonTitle:NSLocalizedString(@"Ok", nil)
+                         otherButtonTitles:nil, nil];
+        [errorView show];
+        return NO;
+    }
+    
+    return YES;
 }
 
 - (IBAction)onStartClick:(id)sender {
@@ -1419,6 +1493,17 @@ UIAlertView *transportAlert;
 
 - (void)didSelectUICustomPicker:(UICustomPicker *)customPicker selectedItem:(NSString*)item {
     [self.selectProviderButton setTitle:item forState:UIControlStateNormal];
+ 
+    NSString *domain;
+    if([[[[NSUserDefaults standardUserDefaults] dictionaryRepresentation] allKeys] containsObject:[NSString stringWithFormat:@"provider%ld_domain", (long)providerPickerView.selectedRow]]){
+        domain = [[NSUserDefaults standardUserDefaults] stringForKey:[NSString stringWithFormat:@"provider%ld_domain",(long)providerPickerView.selectedRow]];
+        [[NSUserDefaults standardUserDefaults] setInteger:providerPickerView.selectedRow forKey:(NSString*)LOGIN_INDEX_KEY];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
+    
+    if(domain == nil){domain = @"";}
+    self.textFieldDomain.text = domain;
+    
     [self setRecursiveUserInteractionEnabled:true];
 }
 
@@ -1432,13 +1517,6 @@ UIAlertView *transportAlert;
     providerButtonLeftImageView.contentMode = UIViewContentModeScaleAspectFit;
     [self.selectProviderButton addSubview:providerButtonLeftImageView];
     
-    NSString *domain;
-    if([[[[NSUserDefaults standardUserDefaults] dictionaryRepresentation] allKeys] containsObject:[NSString stringWithFormat:@"provider%ld_domain", (long)row]]){
-             domain = [[NSUserDefaults standardUserDefaults] stringForKey:[NSString stringWithFormat:@"provider%ld_domain", (long)row]];
-    }
-
-    if(domain == nil){domain = @"";}
-    [self.textFieldDomain setText:domain];
     [self setRecursiveUserInteractionEnabled:true];
 }
 
@@ -1604,7 +1682,7 @@ UIAlertView *transportAlert;
     [self enableAppropriateCodecs:linphone_core_get_video_codecs(lc)];
 
     // bwLimit - ? the name bwlimit is confusing
-    linphone_core_set_video_preset(lc, "custom");
+    linphone_core_set_video_preset(lc, "high-fps");
     
     // upload_bandwidth
     linphone_core_set_upload_bandwidth(lc, [DefaultSettingsManager sharedInstance].uploadBandwidth);
@@ -1616,7 +1694,7 @@ UIAlertView *transportAlert;
     linphone_core_set_firewall_policy(lc, ([DefaultSettingsManager sharedInstance].enableStun)?LinphonePolicyUseStun:LinphonePolicyUseStun);
     
     //stun_server
-    linphone_core_set_stun_server(lc, ([DefaultSettingsManager sharedInstance].stunServer.UTF8String)?[DefaultSettingsManager sharedInstance].stunServer.UTF8String:"stl.vatrp.net");
+    linphone_core_set_stun_server(lc, ([DefaultSettingsManager sharedInstance].stunServer.UTF8String)?[DefaultSettingsManager sharedInstance].stunServer.UTF8String : self.textFieldDomain.text.UTF8String);
     
     // enable_ice
     if ([DefaultSettingsManager sharedInstance].enableIce) {
@@ -1629,15 +1707,22 @@ UIAlertView *transportAlert;
     // logging
     linphone_core_set_log_level([self logLevel:[DefaultSettingsManager sharedInstance].logging]);
     linphone_core_set_log_handler((OrtpLogFunc)linphone_iphone_log_handler);
-    LinphoneProxyConfig *cfg = linphone_core_get_default_proxy_config([LinphoneManager getLc]);
-    if(cfg){
-        //If autoconfig fails, but you have a valid proxy config, continue to register
-        [[PhoneMainView instance] changeCurrentView:[DialerViewController compositeViewDescription]];
-        linphone_proxy_config_enable_register(cfg, TRUE);
-        if(!linphone_proxy_config_is_registered(cfg)){
-            [[LinphoneManager instance] refreshRegisters];
-        }
-    }
+    
+    
+    LinphoneAuthInfo *info = linphone_auth_info_new(self.textFieldUsername.text.UTF8String, self.textFieldUserId.text.UTF8String, self.textFieldPassword.text.UTF8String, NULL, NULL, self.textFieldDomain.text.UTF8String);
+    
+    linphone_core_add_auth_info([LinphoneManager getLc], info);
+    [LinphoneManager.instance refreshRegisters];
+//    
+//    LinphoneProxyConfig *cfg = linphone_core_get_default_proxy_config([LinphoneManager getLc]);
+//    if(cfg){
+//        //If autoconfig fails, but you have a valid proxy config, continue to register
+//        [[PhoneMainView instance] changeCurrentView:[DialerViewController compositeViewDescription]];
+//        linphone_proxy_config_enable_register(cfg, TRUE);
+//        if(!linphone_proxy_config_is_registered(cfg)){
+//            [[LinphoneManager instance] refreshRegisters];
+//        }
+//    }
     // sip_mwi_uri - ?
     
     // sip_videomail_uri - ?
@@ -1654,11 +1739,6 @@ UIAlertView *transportAlert;
         pt = (PayloadType *)elem->data;
         linphone_core_enable_payload_type(lc, pt, [[DefaultSettingsManager sharedInstance].enabledCodecs containsObject:[NSString stringWithUTF8String:pt->mime_type]]);
         
-        // download_bandwidth , related to the document
-        if ([[NSString stringWithUTF8String:pt->mime_type] isEqualToString:@"H264"]) {
-            PayloadType *pt = [[LinphoneManager instance] findVideoCodec:@"h264_preference"];
-            linphone_core_enable_payload_type(lc, pt, 0);
-        }
     }
 }
 
@@ -1749,9 +1829,20 @@ static BOOL isAdvancedShown = NO;
 }
 
 - (void)onProviderLookupFinished:(NSMutableArray *)domains {
-    
-    cdnResources = domains;
-    [self setupProviderPickerView];
+    //If cached providers is same, don't refresh custom picker
+    if(![cdnResources isEqualToArray:domains]){
+        cdnResources = domains;
+        [self setupProviderPickerView];
+    }
+}
+
+- (void) showDefaultRegistrationFailedMessage {
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Registration failure", nil)
+                                                    message:DEFAULT_ERROR_DATA_MESSAGE
+                                                   delegate:nil
+                                          cancelButtonTitle:@"OK"
+                                          otherButtonTitles:nil];
+    [alert show];
 }
 
 @end

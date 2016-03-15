@@ -2,8 +2,8 @@
 //  DateTimePicker.m
 //  amTaxi
 //
-//  Created by Edgar Sukiasyan on 4/27/15.
-//  Copyright (c) 2015 Home. All rights reserved.
+//  Created by Ruben Semerjyan on 4/27/15.
+//  Copyright (c) 2015 VTCSecure. All rights reserved.
 //
 
 #import "UICustomPicker.h"
@@ -132,6 +132,12 @@
 
 
 #pragma mark - UIPickerView DataSource
+
+-(void) setDataSource:(NSArray *)_dataSource{
+    if(!_dataSource) return;
+   
+    arraySource = _dataSource;
+}
 // returns the number of 'columns' to display.
 - (NSInteger)numberOfComponentsInPickerView:(UIPickerView *)pickerView {
     return 1;

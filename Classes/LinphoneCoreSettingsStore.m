@@ -215,7 +215,7 @@ extern void linphone_iphone_log_handler(const char *domain, OrtpLogLevel lev, co
 
 				[self setCString:tname forKey:@"transport_preference"];
 				[self setBool:(linphone_proxy_config_get_route(cfg) != NULL)forKey:@"outbound_proxy_preference"];
-				[self setBool:linphone_core_video_enabled(lc) forKey:@"enable_video_preference"];
+				[self setBool:true forKey:@"enable_video_preference"];
 				[self setBool:[LinphoneManager.instance lpConfigBoolForKey:@"auto_answer"]
 					   forKey:@"enable_auto_answer_preference"];
                 
@@ -278,16 +278,16 @@ extern void linphone_iphone_log_handler(const char *domain, OrtpLogLevel lev, co
 
 		const char *preset = linphone_core_get_video_preset(lc);
         if(!preset){
-            preset = "custom";
+            preset = "high-fps";
             linphone_core_set_video_preset(lc, preset);
         }
-		[self setCString:preset ? preset : "custom" forKey:@"video_preset_preference"];
+		[self setCString:preset ? preset : "high-fps" forKey:@"video_preset_preference"];
         MSVideoSize vsize;
         
         linphone_core_set_adaptive_rate_algorithm(lc, "Stateful");
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
         if(![[[defaults dictionaryRepresentation] allKeys] containsObject:@"video_preferred_size_preference"]){
-            [defaults setObject:@"vga" forKey:@"video_preferred_size_preference"];
+            [defaults setObject:@"cif" forKey:@"video_preferred_size_preference"];
         }
         [self setObject:[defaults objectForKey:@"video_preferred_size_preference"] forKey:@"video_preferred_size_preference"];
         
@@ -307,6 +307,22 @@ extern void linphone_iphone_log_handler(const char *domain, OrtpLogLevel lev, co
        
         [self setRtcpFbMode: TRUE];
     }
+    //Speaker mute
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    BOOL isSpeakerMuted = [defaults boolForKey:@"mute_speaker_preference"];
+    
+    if(![[[defaults dictionaryRepresentation] allKeys] containsObject:@"mute_speaker_preference"]){
+        isSpeakerMuted = NO;
+    }
+
+    [self setBool:isSpeakerMuted forKey:@"mute_speaker_preference"];
+    //Mic mute
+    BOOL isMicMuted = [defaults boolForKey:@"mute_microphone_preference"];
+    
+    if(![[[defaults dictionaryRepresentation] allKeys] containsObject:@"mute_microphone_preference"]){
+        isMicMuted = NO;
+    }
+    [self setBool:isMicMuted forKey:@"mute_microphone_preference"];
 
 	// call section
 	{
@@ -432,27 +448,37 @@ extern void linphone_iphone_log_handler(const char *domain, OrtpLogLevel lev, co
 
 - (void)setQoSInitialValues {
     
-    int sip = linphone_core_get_sip_dscp([LinphoneManager getLc]);
-    int audio = linphone_core_get_audio_dscp([LinphoneManager getLc]);
-    int video = linphone_core_get_video_dscp([LinphoneManager getLc]);
     if (![[NSUserDefaults standardUserDefaults] objectForKey:@"QoS"]) {
         // First time
-          [self setBool:YES forKey:@"QoS"];
+        [self setBool:YES forKey:@"QoS"];
     } else if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"QoS"] integerValue] == 1) {
         // Turned On
-        if (sip != 28 && audio != 38 && video != 38) {
-            linphone_core_set_sip_dscp([LinphoneManager getLc], 28);
-            linphone_core_set_audio_dscp([LinphoneManager getLc], 38);
-            linphone_core_set_video_dscp([LinphoneManager getLc], 38);
+        int signalValue = 24;
+        int audioValue = 46;
+        int videoValue = 46;
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"signaling_preference"] ||
+            [[NSUserDefaults standardUserDefaults] objectForKey:@"audio_preference"] ||
+            [[NSUserDefaults standardUserDefaults] objectForKey:@"video_preference"]) {
+            signalValue = [[[NSUserDefaults standardUserDefaults] objectForKey:@"signaling_preference"] intValue];
+            audioValue = [[[NSUserDefaults standardUserDefaults] objectForKey:@"audio_preference"] intValue];
+            videoValue = [[[NSUserDefaults standardUserDefaults] objectForKey:@"video_preference"] intValue];
         }
+        linphone_core_set_sip_dscp([LinphoneManager getLc], signalValue);
+        linphone_core_set_audio_dscp([LinphoneManager getLc], audioValue);
+        linphone_core_set_video_dscp([LinphoneManager getLc], videoValue);
+        
+        [self setInteger:signalValue forKey:@"signaling_preference"];
+        [self setInteger:audioValue forKey:@"audio_preference"];
+        [self setInteger:videoValue forKey:@"video_preference"];
         [self setBool:YES forKey:@"QoS"];
     } else {
         // Turned Off
-        if (sip != 26 && audio != 46 && video != 0) {
-            linphone_core_set_sip_dscp([LinphoneManager getLc], 0);
-            linphone_core_set_audio_dscp([LinphoneManager getLc], 0);
-            linphone_core_set_video_dscp([LinphoneManager getLc], 0);
-        }
+        linphone_core_set_sip_dscp([LinphoneManager getLc], 0);
+        linphone_core_set_audio_dscp([LinphoneManager getLc], 0);
+        linphone_core_set_video_dscp([LinphoneManager getLc], 0);
+        [self setInteger:0 forKey:@"signaling_preference"];
+        [self setInteger:0 forKey:@"audio_preference"];
+        [self setInteger:0 forKey:@"video_preference"];
         [self setBool:NO forKey:@"QoS"];
     }
 }
@@ -730,7 +756,7 @@ extern void linphone_iphone_log_handler(const char *domain, OrtpLogLevel lev, co
 
 		NSString *videoPreset = [self stringForKey:@"video_preset_preference"];
         if(!videoPreset){
-            videoPreset = @"custom";
+            videoPreset = @"high-fps";
         }
 		linphone_core_set_video_preset(lc, [videoPreset UTF8String]);
 		MSVideoSize vsize;
