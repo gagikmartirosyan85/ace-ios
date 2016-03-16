@@ -273,6 +273,7 @@
     }
 }
 
+
 #pragma mark - Action Methods
 - (IBAction)doDetailsSwipe:(UISwipeGestureRecognizer *)sender {
     
