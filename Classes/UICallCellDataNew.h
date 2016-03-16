@@ -9,17 +9,17 @@
 #import <Foundation/Foundation.h>
 #include "linphone/linphonecore.h"
 
-typedef enum _UICallCellOtherView {
-    UICallCellOtherView_Avatar = 0,
-    UICallCellOtherView_AudioStats,
-    UICallCellOtherView_VideoStats,
-    UICallCellOtherView_MAX
-} UICallCellOtherView;
+typedef enum CallCellOtherView {
+    CallCellOtherView_Avatar = 0,
+    CallCellOtherView_AudioStats,
+    CallCellOtherView_VideoStats,
+    CallCellOtherView_MAX
+} CallCellOtherView;
 
 @interface UICallCellDataNew : NSObject
 
 @property (nonatomic, assign) BOOL minimize;
-@property (nonatomic, assign) UICallCellOtherView view;
+@property (nonatomic, assign) CallCellOtherView view;
 @property (nonatomic, assign) LinphoneCall *call;
 @property (nonatomic, strong) UIImage *image;
 @property (nonatomic, strong) NSString *address;

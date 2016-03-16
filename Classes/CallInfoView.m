@@ -258,15 +258,15 @@
         LOGW(@"Cannot update call cell: null call or data");
         return;
     }
-    if (self.data.view == UICallCellOtherView_Avatar && self.avatarView.isHidden) {
+    if (self.data.view == CallCellOtherView_Avatar && self.avatarView.isHidden) {
         [self.avatarView setHidden:FALSE];
         [self.audioStatsView setHidden:TRUE];
         [self.videoStatsView setHidden:TRUE];
-    } else if (self.data.view == UICallCellOtherView_AudioStats && self.audioStatsView.isHidden) {
+    } else if (self.data.view == CallCellOtherView_AudioStats && self.audioStatsView.isHidden) {
         [self.avatarView setHidden:TRUE];
         [self.audioStatsView setHidden:FALSE];
         [self.videoStatsView setHidden:TRUE];
-    } else if (self.data.view == UICallCellOtherView_VideoStats && self.videoStatsView.isHidden) {
+    } else if (self.data.view == CallCellOtherView_VideoStats && self.videoStatsView.isHidden) {
         [self.avatarView setHidden:TRUE];
         [self.audioStatsView setHidden:TRUE];
         [self.videoStatsView setHidden:FALSE];
@@ -280,7 +280,7 @@
     CATransition *trans = nil;
     if (self.data != nil) {
         if (sender.direction == UISwipeGestureRecognizerDirectionLeft) {
-            if (self.data.view == UICallCellOtherView_MAX - 1) {
+            if (self.data.view == CallCellOtherView_MAX - 1) {
                 self.data.view = 0;
             } else {
                 ++self.data.view;
@@ -292,7 +292,7 @@
             [trans setSubtype:kCATransitionFromRight];
         } else if (sender.direction == UISwipeGestureRecognizerDirectionRight) {
             if (self.data.view == 0) {
-                self.data.view = UICallCellOtherView_MAX - 1;
+                self.data.view = CallCellOtherView_MAX - 1;
             } else {
                 --self.data.view;
             }

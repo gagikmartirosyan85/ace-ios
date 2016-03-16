@@ -19,7 +19,7 @@
     self = [super init];
     if (self != nil) {
         self.minimize = minimized;
-        self.view = UICallCellOtherView_Avatar;
+        self.view = CallCellOtherView_Avatar;
         self.call = acall;
         self.image = [UIImage imageNamed:@"avatar_unknown.png"];
         self.address = NSLocalizedString(@"Unknown", nil);
