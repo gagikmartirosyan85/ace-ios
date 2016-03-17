@@ -13,8 +13,6 @@
 
 @interface CallInfoView : BaseView
 
-@property (nonatomic, strong) UICallCellDataNew *data;
-
 @property (nonatomic, assign) ViewState viewState;
 
 /**
@@ -33,6 +31,10 @@
  */
 - (void)hideWithAnimation:(BOOL)animation completion:(void(^)())completion;
 
+/**
+ *  @brief Updates call info data
+ */
+- (void)update;
 
 /**
  *  @brief Stops updating call info

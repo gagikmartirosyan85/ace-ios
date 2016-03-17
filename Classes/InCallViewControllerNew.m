@@ -307,14 +307,12 @@ typedef NS_ENUM(NSInteger, CallQualityStatus) {
         case LinphoneCallError: {
             
             [[UIManager sharedManager] hideInCallViewControllerAnimated:YES];
-            [self.callInfoView stopDataUpdating];
             [self hideQualityIndicator];
             break;
         }
         case LinphoneCallEnd: {
             
             [self.inCallOnHoldView hideWithAnimation:YES direction:AnimationDirectionLeft completion:nil];
-            [self.callInfoView stopDataUpdating];
             NSUInteger callsCount = [[LinphoneManager instance] callsCountForLinphoneCore:[LinphoneManager getLc]];
             if (callsCount == 0) {
                 [self hideQualityIndicator];
@@ -375,6 +373,7 @@ typedef NS_ENUM(NSInteger, CallQualityStatus) {
 //    [self setupMicriphoneButtonState];
 //    [self setupSpeakerButtonState];
     [self checkRTTForCall:call];
+    [self.callInfoView update];
 }
 
 - (void)checkHoldCall {
@@ -802,17 +801,6 @@ typedef NS_ENUM(NSInteger, CallQualityStatus) {
         }
         
     };
-    
-    UICallCellDataNew *data = nil;
-    LinphoneCall *call = [[LinphoneManager instance] currentCall];
-    if (call != NULL) {
-        LinphoneCallAppData *appData = (__bridge LinphoneCallAppData *)linphone_call_get_user_pointer(call);
-        if (appData != NULL) {
-            data = [[UICallCellDataNew alloc] init:call minimized:NO];
-        }
-    }
-    
-    self.callInfoView.data = data;
 }
 
 - (void)animateToBottomVideoPreviewViewWithDuration:(NSTimeInterval)duration {

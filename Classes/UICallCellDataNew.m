@@ -15,12 +15,11 @@
 
 @implementation UICallCellDataNew
 
-- (id)init:(LinphoneCall *)acall minimized:(BOOL)minimized {
+- (instancetype)initWithCall:(LinphoneCall*)call {
     self = [super init];
     if (self != nil) {
-        self.minimize = minimized;
         self.view = UICallCellOtherView_Avatar;
-        self.call = acall;
+        self.call = call;
         self.image = [UIImage imageNamed:@"avatar_unknown.png"];
         self.address = NSLocalizedString(@"Unknown", nil);
         [self update];

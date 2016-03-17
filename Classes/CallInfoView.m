@@ -43,6 +43,7 @@
 @property (nonatomic, strong) IBOutlet UISwipeGestureRecognizer *detailsLeftSwipeGestureRecognizer;
 @property (nonatomic, strong) IBOutlet UISwipeGestureRecognizer *detailsRightSwipeGestureRecognizer;
 @property (nonatomic, strong) NSTimer *updateTimer;
+@property (nonatomic, strong) UICallCellDataNew *data;
 
 @end
 
@@ -52,6 +53,11 @@
 - (void)awakeFromNib {
     
     [self setupView];
+}
+
+- (void)dealloc {
+    
+    [self stopDataUpdating];
 }
 
 
@@ -80,12 +86,6 @@
 }
 
 - (void)stopDataUpdating {
-    
-    [self.updateTimer invalidate];
-    self.updateTimer = nil;
-}
-
-- (void)dealloc {
     
     [self.updateTimer invalidate];
     self.updateTimer = nil;
@@ -134,7 +134,6 @@
 }
 
 #pragma mark - Animations
-
 - (void)showWithAnimation:(BOOL)animation completion:(void(^)())completion {
     
     self.viewState = VS_Animating;
@@ -174,11 +173,25 @@
                      }];
 }
 
-
 - (void)update {
     
+    LinphoneCall *call = [[LinphoneManager instance] currentCall];
+    
+    if (call != self.data.call) {
+        self.data = nil;
+        UICallCellDataNew *data = nil;
+        if (call != NULL) {
+            LinphoneCallAppData *appData = (__bridge LinphoneCallAppData *)linphone_call_get_user_pointer(call);
+            if (appData != NULL) {
+                data = [[UICallCellDataNew alloc] initWithCall:call];
+            }
+        }
+        self.data = data;
+    }
+    
     if(self.data == nil || self.data.call == NULL) {
-        LOGW(@"Cannot update call cell: null call or data");
+        LOGW(@"Cannot update call: null call or data");
+        [self stopDataUpdating];
         return;
     }
     
@@ -191,12 +204,12 @@
 - (void)updateStats {
     
     if (self.data == nil || self.data.call == NULL) {
-        LOGW(@"Cannot update call cell: null call or data");
+        LOGW(@"Cannot update call: null call or data");
+        [self stopDataUpdating];
         return;
     }
-    LinphoneCall *call = self.data.call;
     
-    const LinphoneCallParams *params = linphone_call_get_current_params(call);
+    const LinphoneCallParams *params = linphone_call_get_current_params(self.data.call);
     {
         const PayloadType *payload = linphone_call_params_get_used_audio_codec(params);
         if (payload != NULL) {
@@ -205,7 +218,7 @@
         } else {
             [self.audioCodecLabel setText:NSLocalizedString(@"No codec", nil)];
         }
-        const LinphoneCallStats *stats = linphone_call_get_audio_stats(call);
+        const LinphoneCallStats *stats = linphone_call_get_audio_stats(self.data.call);
         if (stats != NULL) {
             [self.audioUploadBandwidthLabel setText:[NSString stringWithFormat:@"%1.1f kbits/s", stats->upload_bandwidth]];
             [self.audioDownloadBandwidthLabel
@@ -226,7 +239,7 @@
             [self.videoCodecLabel setText:NSLocalizedString(@"No codec", nil)];
         }
         
-        const LinphoneCallStats *stats = linphone_call_get_video_stats(call);
+        const LinphoneCallStats *stats = linphone_call_get_video_stats(self.data.call);
         
         if (stats != NULL && linphone_call_params_video_enabled(params)) {
             MSVideoSize sentSize = linphone_call_params_get_sent_video_size(params);
@@ -255,7 +268,8 @@
 - (void)updateDetailsView {
     
     if (self.data == nil || self.data.call == NULL) {
-        LOGW(@"Cannot update call cell: null call or data");
+        LOGW(@"Cannot update call: null call or data");
+        [self stopDataUpdating];
         return;
     }
     if (self.data.view == UICallCellOtherView_Avatar && self.avatarView.isHidden) {

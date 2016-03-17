@@ -18,12 +18,11 @@ typedef enum _UICallCellOtherView {
 
 @interface UICallCellDataNew : NSObject
 
-@property (nonatomic, assign) BOOL minimize;
 @property (nonatomic, assign) UICallCellOtherView view;
 @property (nonatomic, assign) LinphoneCall *call;
 @property (nonatomic, strong) UIImage *image;
 @property (nonatomic, strong) NSString *address;
 
-- (id)init:(LinphoneCall*) call minimized:(BOOL)minimized;
+- (instancetype)initWithCall:(LinphoneCall*)call;
 
 @end
